@@ -121,8 +121,93 @@ def main():
                 llm_output = process_resume_with_llm(resume_text)
 
                 if llm_output:
-                    st.write("AI extracted the following information:")
-                    st.json(llm_output)
+                    st.subheader("AI Analysis of Your Resume")
+
+                    # Create columns for better organization
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        # Education
+                        st.markdown("### 🎓 Education")
+                        education_level = llm_output.get('education_level', 'Not specified')
+                        if education_level == 'high_school':
+                            education_display = 'High School'
+                        elif education_level == 'associate':
+                            education_display = 'Associate Degree'
+                        elif education_level == 'bachelor':
+                            education_display = 'Bachelor\'s Degree'
+                        elif education_level == 'master':
+                            education_display = 'Master\'s Degree'
+                        elif education_level == 'phd':
+                            education_display = 'PhD'
+                        else:
+                            education_display = education_level.title()
+                            
+                        st.markdown(f"**Level**: {education_display}")
+                        
+                        # Experience
+                        st.markdown("### 💼 Experience")
+                        years = llm_output.get('years_of_experience', 0)
+                        st.markdown(f"**Years**: {years}")
+                        
+                        # Internship
+                        st.markdown("### 🔍 Internship")
+                        has_internship = llm_output.get('has_internship', False)
+                        if has_internship:
+                            st.markdown("✅ **Completed**")
+                        else:
+                            st.markdown("❌ **Not completed**")
+
+                    with col2:
+                        # Major/Field of Study
+                        st.markdown("### 🏫 Field of Study")
+                        major_field = llm_output.get('major_field', 'Not specified')
+                        if major_field == 'cs':
+                            major_display = 'Computer Science'
+                        elif major_field == 'engineering':
+                            major_display = 'Engineering'
+                        elif major_field == 'business':
+                            major_display = 'Business'
+                        elif major_field == 'arts':
+                            major_display = 'Arts'
+                        elif major_field == 'science':
+                            major_display = 'Science'
+                        else:
+                            major_display = major_field.title()
+                            
+                        st.markdown(f"**Major**: {major_display}")
+                        
+                        # Programming Languages
+                        st.markdown("### 💻 Programming Languages")
+                        prog_languages = llm_output.get('programming_languages', [])
+                        if prog_languages:
+                            for lang in prog_languages:
+                                st.markdown(f"- {lang}")
+                            st.markdown(f"**Total**: {len(prog_languages)} languages")
+                        else:
+                            st.markdown("None specified")
+
+                    # Technical Skills
+                    st.markdown("### 🛠️ Technical Skills")
+                    tech_skills = llm_output.get('technical_skills', [])
+
+                    # Check if there are skills to display
+                    if tech_skills:
+                        # Create a grid layout for skills
+                        num_cols = 3
+                        skills_rows = [tech_skills[i:i + num_cols] for i in range(0, len(tech_skills), num_cols)]
+                        
+                        for row in skills_rows:
+                            cols = st.columns(num_cols)
+                            for i, skill in enumerate(row):
+                                cols[i].markdown(f"- {skill}")
+                        
+                        st.markdown(f"**Total**: {len(tech_skills)} skills")
+                    else:
+                        st.markdown("None specified")
+
+                    # Add a separator before prediction
+                    st.markdown("---")
 
                     # Preprocess for model
                     features = preprocess_llm_output(llm_output)

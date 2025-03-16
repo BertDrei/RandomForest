@@ -178,27 +178,30 @@ def generate_suggestions(features, probability):
     return suggestions
 
 def get_active_dataset_info():
-    """Return information about the dataset used for current model"""
-    model_info_path = 'model_info.json'
+    """Get information about the currently active dataset"""
+    info_file = 'model_info.json'
     
-    if os.path.exists(model_info_path):
+    if os.path.exists(info_file):
         try:
-            with open(model_info_path, 'r') as f:
+            with open(info_file, 'r') as f:
                 return json.load(f)
         except:
-            return {"dataset": "unknown", "trained_on": "unknown"}
-    else:
-        return {"dataset": "synthetic", "trained_on": "unknown"}
+            pass
+    
+    # Default info if file doesn't exist or can't be read
+    return {
+        'dataset': 'synthetic data',
+        'trained_on': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
 
 def save_model_info(dataset_name):
-    """Save information about the model and dataset used"""
-    import datetime
-    import json
+    """Save information about model training"""
+    info_file = 'model_info.json'
     
-    model_info = {
-        "dataset": dataset_name,
-        "trained_on": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    info = {
+        'dataset': dataset_name,
+        'trained_on': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     
-    with open('model_info.json', 'w') as f:
-        json.dump(model_info, f)
+    with open(info_file, 'w') as f:
+        json.dump(info, f)

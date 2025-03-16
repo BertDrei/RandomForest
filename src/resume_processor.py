@@ -37,18 +37,18 @@ def process_resume_with_llm(resume_text):
         return None
     
     prompt = f"""
-    Extract the following information from this resume and return it as a JSON object:
-    1. Education level (assign one: high_school, associate, bachelor, master, phd)
-    2. Years of experience (integer)
-    3. Technical skills (list all relevant skills)
-    4. Has_internship (true/false)
-    5. Programming_languages (list all mentioned)
-    6. Major_field (assign one: cs, engineering, business, arts, science, other)
+    Extract the following information from this resume and return it as a JSON object with EXACTLY these keys:
+    1. education_level (assign one value: high_school, associate, bachelor, master, phd)
+    2. years_of_experience (integer number only)
+    3. technical_skills (list all relevant skills as an array)
+    4. has_internship (boolean: true or false)
+    5. programming_languages (list all mentioned as an array)
+    6. major_field (assign one value: cs, engineering, business, arts, science, other)
     
     Resume:
     {resume_text}
     
-    Return only the JSON object with these fields. Do not include any explanations.
+    Return ONLY the JSON object with these exact keys. Do not include any explanations.
     """
     
     try:
@@ -61,13 +61,25 @@ def process_resume_with_llm(resume_text):
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
             json_str = json_match.group(0)
-            return json.loads(json_str)
+            result = json.loads(json_str)
         else:
             try:
-                return json.loads(response_text)
+                result = json.loads(response_text)
             except:
                 st.error("Couldn't parse JSON from Gemini response")
                 return None
+                
+        # Ensure consistent key naming and default values
+        normalized_data = {
+            "education_level": result.get("education_level", "not_specified"),
+            "years_of_experience": int(result.get("years_of_experience", 0)),
+            "technical_skills": result.get("technical_skills", []),
+            "has_internship": result.get("has_internship", False),
+            "programming_languages": result.get("programming_languages", []),
+            "major_field": result.get("major_field", "other")
+        }
+        
+        return normalized_data
     except Exception as e:
         st.error(f"Error processing resume with Gemini: {str(e)}")
         return None
