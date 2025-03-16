@@ -327,3 +327,189 @@ def display_prediction_results(prediction, probability, features_df, model):
     The percentages represent career advancement probability, while dollar figures show potential salary progression.
     These projections assume continued skill development and professional growth.
     """)
+    
+    # Sector employment potential visualization
+    st.subheader("Employment Potential by Sector")
+    st.markdown("Based on your profile, here's your employment potential across different sectors:")
+    
+    # Get profile features to determine sector fit
+    has_programming = features_df['prog_languages_count'].iloc[0] > 0
+    education_level_score = 0
+    for i, level in enumerate(['high_school', 'associate', 'bachelor', 'master', 'phd']):
+        if features_df[f'education_{level}'].iloc[0] == 1:
+            education_level_score = i
+    
+    experience_years = features_df['years_experience'].iloc[0]
+    skills_count = features_df['skills_count'].iloc[0]
+    has_internship = features_df['has_internship'].iloc[0]
+    
+    # Determine major field
+    major_field = None
+    for field in ['cs', 'engineering', 'business', 'arts', 'science', 'other']:
+        if features_df[f'major_{field}'].iloc[0] == 1:
+            major_field = field
+            break
+    
+    # Calculate sector fitness (base probability adjusted by relevant factors)
+    sectors = {
+        "Technology": 0.0,
+        "Finance": 0.0,
+        "Healthcare": 0.0,
+        "Education": 0.0,
+        "Manufacturing": 0.0,
+        "Creative Industries": 0.0,
+        "Consulting": 0.0,
+        "Government": 0.0
+    }
+    
+    # Base all sectors on overall probability
+    base_value = probability * 0.5  # Base 50% of score on overall probability
+    
+    for sector in sectors:
+        sectors[sector] = base_value
+    
+    # Adjust based on major and other factors
+    if major_field == 'cs':
+        sectors["Technology"] += 0.4
+        sectors["Finance"] += 0.2
+        sectors["Consulting"] += 0.15
+    elif major_field == 'engineering':
+        sectors["Technology"] += 0.25
+        sectors["Manufacturing"] += 0.3
+        sectors["Healthcare"] += 0.1
+    elif major_field == 'business':
+        sectors["Finance"] += 0.3
+        sectors["Consulting"] += 0.25
+        sectors["Government"] += 0.1
+    elif major_field == 'arts':
+        sectors["Creative Industries"] += 0.35
+        sectors["Education"] += 0.15
+    elif major_field == 'science':
+        sectors["Healthcare"] += 0.25
+        sectors["Technology"] += 0.15
+        sectors["Education"] += 0.2
+    else:  # other
+        sectors["Government"] += 0.15
+        sectors["Education"] += 0.15
+    
+    # Adjust based on programming languages
+    if has_programming:
+        prog_count = features_df['prog_languages_count'].iloc[0]
+        tech_boost = min(0.3, prog_count * 0.05)
+        sectors["Technology"] += tech_boost
+        sectors["Finance"] += tech_boost * 0.5
+    
+    # Adjust based on education level
+    education_boost = education_level_score * 0.05
+    sectors["Education"] += education_boost
+    sectors["Healthcare"] += education_boost * 0.7
+    sectors["Government"] += education_boost * 0.5
+    
+    # Adjust based on experience
+    experience_boost = min(0.2, experience_years * 0.03)
+    for sector in sectors:
+        sectors[sector] += experience_boost
+    
+    # Normalize to ensure no value exceeds 1.0
+    for sector in sectors:
+        sectors[sector] = min(0.95, sectors[sector])
+        sectors[sector] = max(0.05, sectors[sector])  # Ensure minimum value
+    
+    # Sort sectors by probability (highest to lowest)
+    sorted_sectors = dict(sorted(sectors.items(), key=lambda item: item[1], reverse=True))
+    
+    # Create horizontal bar chart for sectors
+    fig_sectors, ax_sectors = plt.subplots(figsize=(10, 6))
+    
+    sector_names = list(sorted_sectors.keys())
+    sector_values = list(sorted_sectors.values())
+    
+    # Select top 6 sectors as requested
+    sector_names = sector_names[:6]
+    sector_values = sector_values[:6]
+    
+    # Create bars with colors based on value
+    colors = plt.cm.RdYlGn(np.array(sector_values))
+    
+    bars = ax_sectors.barh(sector_names, [v * 100 for v in sector_values], color=colors)
+    
+    # Add value labels
+    for bar in bars:
+        width = bar.get_width()
+        ax_sectors.text(width + 1, bar.get_y() + bar.get_height()/2, f'{width:.1f}%', 
+                ha='left', va='center')
+    
+    ax_sectors.set_xlabel('Employment Potential (%)')
+    ax_sectors.set_title('Top Employment Sectors for Your Profile')
+    ax_sectors.set_xlim(0, 100)
+    
+    # Add a descriptive note
+    plt.tight_layout()
+    st.pyplot(fig_sectors)
+    
+    st.markdown("""
+    **Note:** This chart shows your potential fit for different sectors based on your profile. 
+    The percentages represent relative employment potential, factoring in your education, 
+    experience, skills, and major field of study.
+    """)
+    
+    # Show sector insights for top 3 sectors
+    st.subheader("Sector Insights")
+    
+    top_sector_insights = {
+        "Technology": {
+            "roles": ["Software Developer", "Data Analyst", "IT Support", "Product Manager"],
+            "skills": ["Programming", "Data Analysis", "Cloud Services", "Agile Methodologies"]
+        },
+        "Finance": {
+            "roles": ["Financial Analyst", "Investment Banker", "Accountant", "Risk Analyst"],
+            "skills": ["Financial Modeling", "Data Analysis", "Regulatory Knowledge", "Excel"]
+        },
+        "Healthcare": {
+            "roles": ["Clinical Researcher", "Health Informatics", "Healthcare Administrator", "Medical Technologist"],
+            "skills": ["Electronic Medical Records", "Healthcare Regulations", "Patient Care", "Medical Terminology"]
+        },
+        "Education": {
+            "roles": ["Teacher", "Curriculum Developer", "Education Technologist", "Academic Advisor"],
+            "skills": ["Instructional Design", "Student Assessment", "Educational Technology", "Curriculum Development"]
+        },
+        "Manufacturing": {
+            "roles": ["Process Engineer", "Quality Control", "Production Manager", "Supply Chain Analyst"],
+            "skills": ["Lean Manufacturing", "Quality Control", "Supply Chain Management", "CAD/CAM"]
+        },
+        "Creative Industries": {
+            "roles": ["Graphic Designer", "Content Creator", "UX/UI Designer", "Marketing Specialist"],
+            "skills": ["Design Software", "Content Creation", "User Research", "Visual Communication"]
+        },
+        "Consulting": {
+            "roles": ["Business Analyst", "Management Consultant", "IT Consultant", "Strategy Consultant"],
+            "skills": ["Problem Solving", "Client Management", "Business Analysis", "Project Management"]
+        },
+        "Government": {
+            "roles": ["Policy Analyst", "Program Manager", "Research Associate", "Public Administrator"],
+            "skills": ["Policy Analysis", "Public Administration", "Regulatory Knowledge", "Grant Writing"]
+        }
+    }
+    
+    col1, col2 = st.columns(2)
+    
+    # Display insights for top 3 sectors
+    for i, sector in enumerate(list(sorted_sectors.keys())[:3]):
+        if i % 2 == 0:
+            with col1:
+                st.markdown(f"#### {sector} ({sorted_sectors[sector]:.1%})")
+                st.markdown("**Common Roles:**")
+                for role in top_sector_insights[sector]["roles"]:
+                    st.markdown(f"- {role}")
+                st.markdown("**Key Skills:**")
+                for skill in top_sector_insights[sector]["skills"]:
+                    st.markdown(f"- {skill}")
+        else:
+            with col2:
+                st.markdown(f"#### {sector} ({sorted_sectors[sector]:.1%})")
+                st.markdown("**Common Roles:**")
+                for role in top_sector_insights[sector]["roles"]:
+                    st.markdown(f"- {role}")
+                st.markdown("**Key Skills:**")
+                for skill in top_sector_insights[sector]["skills"]:
+                    st.markdown(f"- {skill}")
