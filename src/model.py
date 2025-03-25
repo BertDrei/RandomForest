@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import pickle
 import os
+from datetime import datetime  # Change this line
+import json  # Add this import since json is used
 
 # Function to train/load the model
 def get_model(force_retrain=False):
@@ -30,7 +32,7 @@ def get_model(force_retrain=False):
             st.warning("No CSV data found. Training with synthetic data...")
             return train_synthetic_model(model_path)
 
-def train_model_from_csv(csv_path, model_path):
+def train_model_from_csv(csv_path):
     """Train model using real data from CSV file"""
     try:
         # Load the dataset
